@@ -875,7 +875,7 @@ sub boot_hdd_image {
 
 sub load_common_installation_steps_tests {
     loadtest 'installation/await_install';
-    unless (get_var('REMOTE_CONTROLLER') || is_hyperv_in_gui) {
+    unless (get_var('REMOTE_CONTROLLER')) {
         loadtest "installation/add_serial_console" if is_vmware;
         loadtest 'installation/logs_from_installation_system';
     }
