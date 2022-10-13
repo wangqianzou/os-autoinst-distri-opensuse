@@ -18,6 +18,7 @@ use warnings;
 use base 'bootbasetest';
 
 sub run {
+    sleep 30;
     shift->wait_boot_past_bootloader;
 }
 

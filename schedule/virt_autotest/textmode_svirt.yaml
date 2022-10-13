@@ -1,5 +1,5 @@
 name:           textmode_svirt
-description:    >
+description:     >
     Maintainer: nan.zhang@suse.com
     Textmode installation with integration services and open-vm-tools test modules
 schedule:

@@ -1049,6 +1049,8 @@ sub wait_boot_past_bootloader {
     my $nologin = $args{nologin};
     my $forcenologin = $args{forcenologin};
 
+
+    send_key 'esc';
     # On IPMI, when selecting x11 console, we are connecting to the VNC server on the SUT.
     # select_console('x11'); also performs a login, so we should be at generic-desktop.
     my $gnome_ipmi = (is_ipmi && check_var('DESKTOP', 'gnome'));
