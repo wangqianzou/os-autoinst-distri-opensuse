@@ -266,6 +266,7 @@ sub run {
 
     # Attach to serial console (a TCP port on HYPERV_SERVER).
     $svirt->attach_to_running({stop_vm => 1});
+    #
     # Get the VM's display.
     select_console('sut', await_console => 0);
 }
