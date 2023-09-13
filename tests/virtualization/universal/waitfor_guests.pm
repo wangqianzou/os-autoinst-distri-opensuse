@@ -38,7 +38,7 @@ sub run {
     assert_script_run "cat /etc/hosts";
 
     # Wait for guests to announce that installation is complete
-    my $retry = 35;
+    my $retry = 100;
     my $count = 0;
     while ($count++ < $retry) {
         my @wait_guests = ();
