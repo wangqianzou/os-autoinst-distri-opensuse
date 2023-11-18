@@ -86,6 +86,19 @@ sub run {
         $upload_guest_assets_flag = 'yes';
     }
 
+    if (check_var('BOOT_64KB_PAGE_SIZE', '64kps')) {
+        # Verify 64kb page size enabled.
+        record_info('Baremetal kernel cmdline', script_output('cat /proc/cmdline'));
+        assert_script_run("grep -- '-64kb' /proc/cmdline");
+        record_info('INFO', '64kb page size enabled.');
+
+        # Swap needs to be reinitiated
+        my $swap_partition = script_output("swapon | awk '/\/dev/{print $1; exit}'");
+        record_info('Current swap partition is ', $swap_partition);
+        assert_script_run("swapoff $swap_partition");
+        assert_script_run('swapon --fixpgsz');
+    }
+
     $self->run_test(7600, "", "yes", "yes", "/var/log/qa/", "guest-installation-logs", $upload_guest_assets_flag);
 }
 
