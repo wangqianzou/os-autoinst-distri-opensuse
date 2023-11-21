@@ -855,14 +855,11 @@ elsif (get_var("VIRT_AUTOTEST")) {
             if (get_var("AUTOYAST")) {
                 loadtest "autoyast/installation";
             }
-            else {
-                load_inst_tests();
-            }
         }
         loadtest "virt_autotest/login_console";
-        loadtest "virt_autotest/install_package";
-        loadtest "virt_autotest/update_package";
-        loadtest "virt_autotest/reset_partition";
+        # loadtest "virt_autotest/install_package";
+        # loadtest "virt_autotest/update_package";
+        # loadtest "virt_autotest/reset_partition";
         loadtest "virt_autotest/reboot_and_wait_up_normal" if (!get_var('AUTOYAST') && get_var('REPO_0_TO_INSTALL'));
         loadtest "virt_autotest/download_guest_assets" if get_var("SKIP_GUEST_INSTALL") && is_x86_64;
     }

@@ -27,5 +27,11 @@ conditional_schedule:
         - installation/reboot_after_installation
       '1':
         - autoyast/prepare_profile
-        - boot/boot_from_pxe
+        - "{{bootup}}"
         - autoyast/installation
+  bootup:
+    IPXE:
+      1:
+        - installation/ipxe_install
+      0:
+        - boot/boot_from_pxe

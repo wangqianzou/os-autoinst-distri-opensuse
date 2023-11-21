@@ -93,7 +93,7 @@ sub run {
         record_info('INFO', '64kb page size enabled.');
 
         # Swap needs to be reinitiated
-        my $swap_partition = script_output("swapon | awk '/\/dev/{print $1; exit}'");
+        my $swap_partition = script_output("swapon | awk '/\\/dev/{print \$1; exit}'");
         record_info('Current swap partition is ', $swap_partition);
         assert_script_run("swapoff $swap_partition");
         assert_script_run('swapon --fixpgsz');

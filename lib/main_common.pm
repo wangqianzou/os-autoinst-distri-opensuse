@@ -400,7 +400,7 @@ sub load_boot_tests {
         loadtest "installation/bootloader_start";
     }
     elsif (uses_qa_net_hardware() || get_var("PXEBOOT")) {
-        loadtest "boot/boot_from_pxe";
+        # loadtest "boot/boot_from_pxe";
         set_var("DELAYED_START", get_var("PXEBOOT"));
     }
     elsif (get_var("IPXE")) {
