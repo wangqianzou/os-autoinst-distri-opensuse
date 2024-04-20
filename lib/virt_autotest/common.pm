@@ -147,7 +147,7 @@ if (get_var("REGRESSION", '') =~ /xen/) {
     );
     # Filter out guests not allowed for the detected SLE version
     if (is_sle('=12-SP5')) {
-        my @allowed_guests = qw(sles12sp5HVM sles12sp5PV sles15sp5HVM sles15sp5PV sles15sp6HVM sles15sp6PV);
+        my @allowed_guests = qw(sles12sp5HVM sles12sp5PV sles15sp5HVM sles15sp5PV);
         foreach my $guest (keys %guests) {
             delete $guests{$guest} unless grep { $_ eq $guest } @allowed_guests;
         }
@@ -258,7 +258,7 @@ if (get_var("REGRESSION", '') =~ /xen/) {
             delete $guests{$guest} unless grep { $_ eq $guest } @allowed_guests;
         }
     } elsif (is_sle('=12-SP5')) {
-        my @allowed_guests = qw(sles12sp5 sles15sp5 sles15sp6);
+        my @allowed_guests = qw(sles12sp5 sles15sp5);
         foreach my $guest (keys %guests) {
             delete $guests{$guest} unless grep { $_ eq $guest } @allowed_guests;
         }
