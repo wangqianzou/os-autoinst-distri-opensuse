@@ -204,7 +204,7 @@ sub login_to_console {
                     enter_cmd("yast.ssh");
                 }
                 else {
-                    enter_cmd("DISPLAY= yast.ssh");
+                    enter_cmd("yast.ssh");
                 }
             }
             else {
