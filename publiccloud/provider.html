@@ -14,15 +14,16 @@
 <ul id="index"><li><a href="../index.html"><i>&lt;= Back to file list</i></a></li>
   <li><a href="#METHODS">METHODS</a>
     <ul>
-      <li><a href="#init">init</a></li>
+      <li><a href="#generate_basename">generate_basename</a></li>
       <li><a href="#conv_openqa_tf_name">conv_openqa_tf_name</a></li>
       <li><a href="#find_img">find_img</a></li>
-      <li><a href="#upload_image">upload_image</a></li>
+      <li><a href="#upload_img">upload_img</a></li>
       <li><a href="#img_proof">img_proof</a></li>
       <li><a href="#parse_img_proof_output">parse_img_proof_output</a></li>
       <li><a href="#create_ssh_key">create_ssh_key</a></li>
       <li><a href="#run_img_proof">run_img_proof</a></li>
       <li><a href="#get_image_id">get_image_id</a></li>
+      <li><a href="#get_image_uri">get_image_uri</a></li>
       <li><a href="#create_instance">create_instance</a></li>
       <li><a href="#create_instances">create_instances</a></li>
       <li><a href="#on_terraform_apply_timeout">on_terraform_apply_timeout</a></li>
@@ -31,6 +32,7 @@
       <li><a href="#terraform_apply">terraform_apply</a></li>
       <li><a href="#terraform_destroy">terraform_destroy</a></li>
       <li><a href="#terraform_param_tags">terraform_param_tags</a></li>
+      <li><a href="#get_terraform_output">get_terraform_output</a></li>
       <li><a href="#cleanup">cleanup</a></li>
       <li><a href="#stop_instance">stop_instance</a></li>
       <li><a href="#start_instance">start_instance</a></li>
@@ -41,9 +43,13 @@
 
 <h1 id="METHODS">METHODS</h1>
 
-<h2 id="init">init</h2>
+<h2 id="generate_basename">generate_basename</h2>
 
-<p>Needs provider specific credentials, e.g. key_id, key_secret, region.</p>
+<pre><code>Call: $self-&gt;generate_basename();
+
+openqa test product name composition, based on basic product parameters values and eventual modifiers.
+
+Returns a string-name containing distri, version, flavor, arch.</code></pre>
 
 <h2 id="conv_openqa_tf_name">conv_openqa_tf_name</h2>
 
@@ -53,7 +59,7 @@
 
 <p>Retrieves the image-id by given image <code>name</code>.</p>
 
-<h2 id="upload_image">upload_image</h2>
+<h2 id="upload_img">upload_img</h2>
 
 <p>Upload a image to the CSP. Required parameter is the location of the <code>image</code> file. UEFI images are supported by giving the optional parameter <code>type</code> = &#39;uefi&#39;. This is only supported on GCE at the momment.</p>
 
@@ -61,7 +67,7 @@
 
 <h2 id="img_proof">img_proof</h2>
 
-<pre><code>  img_proof(instance_type =&gt; &lt;string&gt;, cleanup =&gt; &lt;bool&gt;, tests =&gt; &lt;string&gt;, timeout =&gt; &lt;seconds&gt;, results_dir =&gt; &lt;string&gt;, distro =&gt; &lt;string&gt;);</code></pre>
+<pre><code>img_proof(instance_type =&gt; &lt;string&gt;, cleanup =&gt; &lt;bool&gt;, tests =&gt; &lt;string&gt;, timeout =&gt; &lt;seconds&gt;, results_dir =&gt; &lt;string&gt;, distro =&gt; &lt;string&gt;);</code></pre>
 
 <p>Call img-proof tool and retrieves a hashref as result. Do not die if img-proof call exit with error. $result_hash = { instance =&gt; &lt;publiccloud:instance&gt;, # instance object logfile =&gt; &lt;string&gt;, # the pytest logfile results =&gt; &lt;string&gt;, # json results file tests =&gt; &lt;int&gt;, # total number of tests pass =&gt; &lt;int&gt;, # successful tests skip =&gt; &lt;int&gt;, # skipped tests fail =&gt; &lt;int&gt;, # number of failed tests error =&gt; &lt;int&gt;, # number of errors };</p>
 
@@ -79,9 +85,13 @@
 
 <h2 id="get_image_id">get_image_id</h2>
 
-<pre><code>    get_image_id([$img_url]);</code></pre>
+<pre><code>get_image_id([$img_url]);</code></pre>
 
 <p>Retrieves the CSP image id if exists, otherwise exception is thrown. The given <code>$img_url</code> is optional, if not present it retrieves from PUBLIC_CLOUD_IMAGE_LOCATION. If PUBLIC_CLOUD_IMAGE_ID is set, then this value will be used</p>
+
+<h2 id="get_image_uri">get_image_uri</h2>
+
+<p>Retrieves the CSP image uri if exists, otherwise exception is thrown. This is currently used specifically in Azure so the subroutine will die afterwards.</p>
 
 <h2 id="create_instance">create_instance</h2>
 
@@ -93,7 +103,7 @@
 
 <p>Creates multiple instances on the public cloud provider. Retrieves an array of publiccloud::instance objects.</p>
 
-<p><code>image</code> defines the image_id to create the instance. <code>instance_type</code> defines the flavor of the instance. If not specified, it will load it from PUBLIC_CLOUD_INSTANCE_TYPE.</p>
+<p><code>image</code> defines the image_id to create the instance. <code>instance_type</code> defines the flavor of the instance. If not specified, it will load it from PUBLIC_CLOUD_INSTANCE_TYPE. <code>timeout</code> Parameter to pass to instance::wait_for_ssh. <code>proceed_on_failure</code> Same as timeout.</p>
 
 <h2 id="on_terraform_apply_timeout">on_terraform_apply_timeout</h2>
 
@@ -118,6 +128,10 @@
 <h2 id="terraform_param_tags">terraform_param_tags</h2>
 
 <p>Build the tags parameter for terraform. It is a single depth json like c&lt;{&quot;key&quot;: &quot;value&quot;}&gt; where c&lt;value&gt; must be a string.</p>
+
+<h2 id="get_terraform_output">get_terraform_output</h2>
+
+<p>Query the terraform data structure in json format. Input: &lt;jq-query-format&gt; string; &lt;empty&gt; = no query then full output of data structure. E.g: to get the VM instance name from json data structure, the call is: get_terraform_output(&quot;.vm_name.value[0]&quot;); To get the complete output structure, the call is: get_terraform_output();</p>
 
 <h2 id="cleanup">cleanup</h2>
 

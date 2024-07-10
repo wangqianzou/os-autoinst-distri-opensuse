@@ -14,6 +14,9 @@
 <ul id="index"><li><a href="./index.html"><i>&lt;= Back to file list</i></a></li>
   <li><a href="#SYNOPSIS">SYNOPSIS</a>
     <ul>
+      <li><a href="#SAPINIT_RE-SYSTEMD_RE">SAPINIT_RE &amp; SYSTEMD_RE</a></li>
+      <li><a href="#SYSTEMCTL_UNITS_RE">SYSTEMCTL_UNITS_RE</a></li>
+      <li><a href="#ASE_RESPONSE_FILE">ASE_RESPONSE_FILE</a></li>
       <li><a href="#ensure_serialdev_permissions_for_sap">ensure_serialdev_permissions_for_sap</a></li>
       <li><a href="#fix_path">fix_path</a></li>
       <li><a href="#set_ps_cmd">set_ps_cmd</a></li>
@@ -23,6 +26,8 @@
       <li><a href="#get_total_mem">get_total_mem</a></li>
       <li><a href="#is_saptune_installed">is_saptune_installed</a></li>
       <li><a href="#prepare_profile">prepare_profile</a></li>
+      <li><a href="#do_mount">_do_mount</a></li>
+      <li><a href="#copy_media">copy_media</a></li>
       <li><a href="#mount_media">mount_media</a></li>
       <li><a href="#add_hostname_to_hosts">add_hostname_to_hosts</a></li>
       <li><a href="#test_pids_max">test_pids_max</a></li>
@@ -35,12 +40,29 @@
       <li><a href="#check_instance_state">check_instance_state</a></li>
       <li><a href="#check_replication_state">check_replication_state</a></li>
       <li><a href="#check_hanasr_attr">check_hanasr_attr</a></li>
+      <li><a href="#check_landscape">check_landscape</a></li>
       <li><a href="#reboot">reboot</a></li>
       <li><a href="#do_hana_sr_register">do_hana_sr_register</a></li>
       <li><a href="#do_hana_takeover">do_hana_takeover</a></li>
       <li><a href="#install_libopenssl_legacy">install_libopenssl_legacy</a></li>
       <li><a href="#upload_hana_install_log">upload_hana_install_log</a></li>
       <li><a href="#upload_nw_install_log">upload_nw_install_log</a></li>
+      <li><a href="#startup_type">startup_type</a></li>
+      <li><a href="#prepare_swpm">prepare_swpm</a></li>
+      <li><a href="#prepare_sapinst_profile">prepare_sapinst_profile</a></li>
+      <li><a href="#prepare_sap_instances_data">prepare_sap_instances_data</a></li>
+      <li><a href="#get_nw_instance_name">get_nw_instance_name</a></li>
+      <li><a href="#is_instance_type_supported">is_instance_type_supported</a></li>
+      <li><a href="#share_hosts_entry">share_hosts_entry</a></li>
+      <li><a href="#add_hosts_file_entries">add_hosts_file_entries</a></li>
+      <li><a href="#get_sidadm">get_sidadm</a></li>
+      <li><a href="#sap_show_status_info">sap_show_status_info</a></li>
+      <li><a href="#sapcontrol">sapcontrol</a></li>
+      <li><a href="#sapcontrol_process_check">sapcontrol_process_check</a></li>
+      <li><a href="#get_remote_instance_number">get_remote_instance_number</a></li>
+      <li><a href="#get_instance_profile_path">get_instance_profile_path</a></li>
+      <li><a href="#load_ase_env">load_ase_env</a></li>
+      <li><a href="#upload_ase_logs">upload_ase_logs</a></li>
     </ul>
   </li>
 </ul><h1>lib/sles4sap.pm</h1>
@@ -51,6 +73,28 @@
 
 <p>This package inherits from <b>opensusebasetest</b> and should be used as a class.</p>
 
+<h2 id="SAPINIT_RE-SYSTEMD_RE">SAPINIT_RE &amp; SYSTEMD_RE</h2>
+
+<pre><code>$self-&gt;SAPINIT_RE();
+$self-&gt;SAPINIT_RE(qr/some regexp/);
+$self-&gt;SYSTEMD_RE();
+$self-&gt;SYSTEMD_RE(qr/some regexp/);</code></pre>
+
+<p>Set or get a regular expressions to test on the <i>/usr/sap/sapservices</i> file whether the SAP workload was started via sapinit or systemd.</p>
+
+<h2 id="SYSTEMCTL_UNITS_RE">SYSTEMCTL_UNITS_RE</h2>
+
+<pre><code>$self-&gt;SYSTEMCTL_UNITS_RE();
+$self-&gt;SYSTEMCTL_UNITS_RE(qr/some regexp/);</code></pre>
+
+<p>Set or get a regular expression to test in the output of <code>systemctl --list-unit-files</code> whether the SAP workload was started via systemd units.</p>
+
+<h2 id="ASE_RESPONSE_FILE">ASE_RESPONSE_FILE</h2>
+
+<pre><code>$self-&gt;ASE_RESPONSE_FILE($filename);</code></pre>
+
+<p>Let the class methods know the name of the ASE response file currently in use. It is set to undef by default. Test modules testing for SAP ASE should set this property before anything else.</p>
+
 <h2 id="ensure_serialdev_permissions_for_sap">ensure_serialdev_permissions_for_sap</h2>
 
 <p>Derived from &#39;ensure_serialdev_permissions&#39; function available in &#39;utils&#39;.</p>
@@ -59,115 +103,131 @@
 
 <h2 id="fix_path">fix_path</h2>
 
-<pre><code> $self-&gt;fix_path( $uri );</code></pre>
+<pre><code>$self-&gt;fix_path( $uri );</code></pre>
 
 <p>Given the path to a CIFS or NFS share in <b>$uri</b>, this method will format the path so it can be used directly by <b>mount(8)</b>. Returns an array with the protocol name (cifs or nfs) as the first element, and the formatted path as the second element. Croaks if an unsupported protocol is passed in <b>$uri</b> or if it cannot be parsed.</p>
 
 <h2 id="set_ps_cmd">set_ps_cmd</h2>
 
-<pre><code> $self-&gt;set_ps_cmd( $procname );</code></pre>
+<pre><code>$self-&gt;set_ps_cmd( $procname );</code></pre>
 
 <p>Sets in the class instance the <b>ps</b> command to be used to check for the presence of SAP processes in the SUT. Returns the value of the internal variable <b>$ps_cmd</b>.</p>
 
 <h2 id="set_sap_info">set_sap_info</h2>
 
-<pre><code> $self-&gt;set_sap_info( $SID, $instance_number );</code></pre>
+<pre><code>$self-&gt;set_sap_info( $SID, $instance_number );</code></pre>
 
-<p>SAP software relies on 2 identifiers, the system id (SID) which is a 3-character identifier, and the instance number. This method receives both via positional arguments, and sets the internal variables for <b>$sid</b>, <b>$instance</b> and <b>$sapadmin</b> accordingly. Returns the value of <b>$sapadmin</b>.</p>
+<p>SAP software relies on 2 identifiers, the system id (SID) which is a 3-character identifier, and the instance number. This method receives both via positional arguments, and sets the internal variables for <b>$sid</b>, <b>$instance</b> and <b>$sapadmin</b> accordingly. It also sets accessors that depend on <b>$sid</b> and <b>$instance</b> as well as the product type. Returns the value of <b>$sapadmin</b>.</p>
 
 <h2 id="user_change">user_change</h2>
 
-<pre><code> $self-&gt;user_change();</code></pre>
+<pre><code>$self-&gt;user_change();</code></pre>
 
 <p>Switch user in SUT to the SAP admin account, and grant serialdev permissions to the SAP admin user.</p>
 
 <h2 id="reset_user_change">reset_user_change</h2>
 
-<pre><code> $self-&gt;reset_user_change();</code></pre>
+<pre><code>$self-&gt;reset_user_change();</code></pre>
 
 <p>Exit from the SAP admin account in SUT and change serialdev permissions accordingly.</p>
 
 <h2 id="get_total_mem">get_total_mem</h2>
 
-<pre><code> $self-&gt;get_total_mem();</code></pre>
+<pre><code>$self-&gt;get_total_mem();</code></pre>
 
 <p>Returns the total memory configured in SUT.</p>
 
 <h2 id="is_saptune_installed">is_saptune_installed</h2>
 
-<pre><code> is_saptune_installed();</code></pre>
+<pre><code>is_saptune_installed();</code></pre>
 
 <p>Checks if the <b>saptune</b> package is installed in SUT. Returns true or false.</p>
 
 <h2 id="prepare_profile">prepare_profile</h2>
 
-<pre><code> $self-&gt;prepare_profile( $profile );</code></pre>
+<pre><code>$self-&gt;prepare_profile( $profile );</code></pre>
 
 <p>Configures with <b>saptune</b> (if available in SUT) or <b>sapconf</b> the SUT according to a profile passed as argument. <b>$profile</b> must be either <b>HANA</b> or <b>NETWEAVER</b>. Croaks on failure.</p>
 
+<h2 id="do_mount">_do_mount</h2>
+
+<pre><code>_do_mount( $proto, $path, $target);</code></pre>
+
+<p>Performs a call to the mount command (used by both <code>mount_media</code> and <code>copy_media</code>) with appropiate options depending on the protocol. Function internal to the class.</p>
+
+<h2 id="copy_media">copy_media</h2>
+
+<pre><code>$self-&gt;copy_media( $proto, $path, $timeout, $target);</code></pre>
+
+<p>Copies installation media in SUT from the share identified by <b>$proto</b> and <b>$path</b> into the target directory <b>$target</b>. <b>$timeout</b> specifies how long to wait for the copy to complete.</p>
+
+<p>After installation files are copied, this method will also verify the existence of a <i>checksum.md5sum</i> file in the target directory and use it to check for the integrity of the copied files. This test can be skipped by setting to a true value the <b>DISABLE_CHECKSUM</b> setting in the test.</p>
+
+<p>The method will croak if any of the commands sent to SUT fail.</p>
+
 <h2 id="mount_media">mount_media</h2>
 
-<pre><code> $self-&gt;mount_media( $proto, $path, $target );</code></pre>
+<pre><code>$self-&gt;mount_media( $proto, $path, $target );</code></pre>
 
 <p>Mount installation media in SUT from the share identified by <b>$proto</b> and <b>$path</b> into the target directory <b>$target</b>.</p>
 
 <h2 id="add_hostname_to_hosts">add_hostname_to_hosts</h2>
 
-<pre><code> $self-&gt;add_hostname_to_hosts();</code></pre>
+<pre><code>$self-&gt;add_hostname_to_hosts();</code></pre>
 
 <p>Adds the IP address and the hostname of SUT to <i>/etc/hosts</i>. Croaks on failure.</p>
 
 <h2 id="test_pids_max">test_pids_max</h2>
 
-<pre><code> $self-&gt;test_pids_max();</code></pre>
+<pre><code>$self-&gt;test_pids_max();</code></pre>
 
 <p>Checks in SUT that the SAP admin user has no limits in the number of processes and threads that it can create.</p>
 
 <h2 id="test_forkbomb">test_forkbomb</h2>
 
-<pre><code> $self-&gt;test_forkbomb();</code></pre>
+<pre><code>$self-&gt;test_forkbomb();</code></pre>
 
 <p>Runs a script in SUT to create as many processes as possible, both as the SAP administrator and as root, and verifies that the SAP admin can create as many as 99% of the amount of processes that root can. Croaks if any of the commands sent to SUT fail, and record a soft failure if the SAP admin user cannot create as many processes as root.</p>
 
 <h2 id="test_version_info">test_version_info</h2>
 
-<pre><code> $self-&gt;test_version_info();</code></pre>
+<pre><code>$self-&gt;test_version_info();</code></pre>
 
 <p>Runs a <b>sapcontrol</b> command with function <b>GetVersionInfo</b> in SUT. Croaks on failure.</p>
 
 <h2 id="test_instance_properties">test_instance_properties</h2>
 
-<pre><code> $self-&gt;test_instance_properties();</code></pre>
+<pre><code>$self-&gt;test_instance_properties();</code></pre>
 
 <p>Runs a <b>sapcontrol</b> command with function <b>GetInstanceProperties</b> and verifies that the reported properties match with the SID stored in the class instance. Croaks on failure.</p>
 
 <h2 id="test_stop">test_stop</h2>
 
-<pre><code> $self-&gt;test_stop();</code></pre>
+<pre><code>$self-&gt;test_stop();</code></pre>
 
 <p>Tests with <b>sapcontrol</b> and functions <b>Stop</b> and <b>StopService</b> that the instance and services are succesfully stopped. Croaks on failure.</p>
 
 <h2 id="test_start">test_start</h2>
 
-<pre><code> $self-&gt;test_start();</code></pre>
+<pre><code>$self-&gt;test_start();</code></pre>
 
 <p>Tests with <b>sapcontrol</b> and functions <b>Start</b> and <b>StartService</b> that the instance and services are succesfully started. Croaks on failure.</p>
 
 <h2 id="check_service_state">check_service_state</h2>
 
-<pre><code> $self-&gt;check_service_state( $state );</code></pre>
+<pre><code>$self-&gt;check_service_state( $state );</code></pre>
 
 <p>Checks in the process table of SUT for <b>sapstartsrv</b> up to the number of seconds specified in the <b>WAIT_INSTANCE_STOP_TIME</b> setting (defaults to 300, with a maximum permitted value of 600). The <b>$state</b> argument can be either <b>start</b> or <b>stop</b>, and it controls whether this method waits for the process to appear in the process table after service was started, or disappear from the process table after service was stopped. Croaks on failure.</p>
 
 <h2 id="check_instance_state">check_instance_state</h2>
 
-<pre><code> $self-&gt;check_instance_state( $state );</code></pre>
+<pre><code>$self-&gt;check_instance_state( $state );</code></pre>
 
 <p>Uses <b>sapcontrol</b> functions <b>GetSystemInstanceList</b> and <b>GetProcessList</b> to check for up to the number of seconds defined in the <b>WAIT_INSTANCE_STOP_TIME</b> setting (defaults to 300, with a maximum permitted value of 600), whether the instance is in the state specified by the <b>$state</b> argument. This argument can be either <b>green</b> or <b>gray</b>, and it controls whether this method waits for the instance to turn to green status after a start or to turn to gray status after a stop. Croaks on failure.</p>
 
 <h2 id="check_replication_state">check_replication_state</h2>
 
-<pre><code> $self-&gt;check_replication_state();</code></pre>
+<pre><code>$self-&gt;check_replication_state();</code></pre>
 
 <p>Check status of the HANA System Replication by running the <b>systemReplicationStatus.py</b> script in SUT. Waits for 5 minutes for HANA System Replication to be in Active state or croaks on timeout.</p>
 
@@ -177,25 +237,31 @@
 
 <h2 id="check_hanasr_attr">check_hanasr_attr</h2>
 
-<pre><code> $self-&gt;check_hanasr_attr();</code></pre>
+<pre><code>$self-&gt;check_hanasr_attr();</code></pre>
 
 <p>Runs <b>SAPHanaSR-showAttr</b> and checks in its output for up to a timeout specified in the named argument <b>timeout</b> (defaults to 90 seconds) that the sync_state is <b>SOK</b>. It also checks that no <b>SFAIL</b> sync_status is present in the output. Finishes by printing the full output of <b>SAPHanaSR-showAttr</b>. This method will only fail if <b>SAPHanaSR-showAttr</b> returns a non-zero return value.</p>
 
+<h2 id="check_landscape">check_landscape</h2>
+
+<pre><code>$self-&gt;check_landscape();</code></pre>
+
+<p>Runs <b>lanscapeHostConfiguration.py</b> and records the information.</p>
+
 <h2 id="reboot">reboot</h2>
 
-<pre><code> $self-&gt;reboot();</code></pre>
+<pre><code>$self-&gt;reboot();</code></pre>
 
 <p>Restart the SUT and reconnect to the console right after.</p>
 
 <h2 id="do_hana_sr_register">do_hana_sr_register</h2>
 
-<pre><code> $self-&gt;do_hana_sr_register( node =&gt; $node );</code></pre>
+<pre><code>$self-&gt;do_hana_sr_register( node =&gt; $node );</code></pre>
 
 <p>Register current HANA node to the node specified by the named argument <b>node</b>. With the named argument <b>proceed_on_failure</b> set to 1, method will use <b>script_run</b> and return the return value of the <b>script_run</b> call even if sr_register command fails, otherwise <b>assert_script_run</b> is used and the method croaks on failure.</p>
 
 <h2 id="do_hana_takeover">do_hana_takeover</h2>
 
-<pre><code> $self-&gt;do_hana_takeover( node =&gt; $node [, manual_takeover =&gt; $manual_takeover] [, cluster =&gt; $cluster] );</code></pre>
+<pre><code>$self-&gt;do_hana_takeover( node =&gt; $node [, manual_takeover =&gt; $manual_takeover] [, cluster =&gt; $cluster] [, timeout =&gt; $timeout] );</code></pre>
 
 <p>Do a takeover/takeback on a HANA cluster.</p>
 
@@ -205,9 +271,11 @@
 
 <p>Set <b>$cluster</b> to true so the method runs also a <code>crm resource cleanup</code>. Defaults to false.</p>
 
+<p>Set <b>$timeout</b> to the amount of seconds the internal calls will wait for. Defaults to 300 seconds.</p>
+
 <h2 id="install_libopenssl_legacy">install_libopenssl_legacy</h2>
 
-<pre><code> $self-&gt;install_libopenssl_legacy( $hana_path );</code></pre>
+<pre><code>$self-&gt;install_libopenssl_legacy( $hana_path );</code></pre>
 
 <p>Install <b>libopenssl1_0_0</b> for older (&lt;SPS03) HANA versions on SLE15+</p>
 
@@ -215,15 +283,218 @@
 
 <h2 id="upload_hana_install_log">upload_hana_install_log</h2>
 
-<pre><code> $self-&gt;upload_hana_install_log();</code></pre>
+<pre><code>$self-&gt;upload_hana_install_log();</code></pre>
 
 <p>Package and upload HANA installation logs from SUT.</p>
 
 <h2 id="upload_nw_install_log">upload_nw_install_log</h2>
 
-<pre><code> $self-&gt;upload_nw_install_log();</code></pre>
+<pre><code>$self-&gt;upload_nw_install_log();</code></pre>
 
 <p>Upload NetWeaver installation logs from SUT.</p>
+
+<h2 id="startup_type">startup_type</h2>
+
+<pre><code>$self-&gt;startup_type();</code></pre>
+
+<p>Record whether the SAP workload was started via sapinit or systemd units.</p>
+
+<h2 id="prepare_swpm">prepare_swpm</h2>
+
+<pre><code>$self-&gt;prepare_swpm(sapcar_bin_path=&gt;$sapcar_bin_path,
+   sar_archives_dir=&gt;$sar_archives_dir,
+   swpm_sar_filename=&gt;$swpm_sar_filename,
+   target_path=&gt;$target_path);</code></pre>
+
+<p>Unpacks and prepares swpm package from specified source dir into target directory using SAPCAR tool. After extraction it checks for &#39;sapinst&#39; executable being present in target path. Croaks if executable is missing.</p>
+
+<p><b>sapcar_bin_path</b> Filename with full path to SAPCAR binary</p>
+
+<p><b>sar_archives_dir</b> Directory which contains all required SAR archives (SWPM, SAP kernel, Patches, etc...)</p>
+
+<p><b>swpm_sar_filename</b> SWPM SAR archive filename</p>
+
+<p><b>target_path</b> Target path for archives to be unpacked into</p>
+
+<h2 id="prepare_sapinst_profile">prepare_sapinst_profile</h2>
+
+<pre><code>$self-&gt;prepare_sapinst_profile(
+   profile_target_file=&gt;$profile_target_file,
+   profile_template_file=&gt;$profile_template_file,
+   sar_location_directory=&gt;$sar_location_directory);</code></pre>
+
+<p>Copies sapinst profile template from NFS to target dir and fills in required variables.</p>
+
+<p><b>profile_target_file</b> Full filename and path for sapinst install profile to be created</p>
+
+<p><b>profile_template_file</b> Template file location from which will the profile be sceated</p>
+
+<p><b>sar_location_directory</b> Location of SAR files - this is filled into template</p>
+
+<h2 id="prepare_sap_instances_data">prepare_sap_instances_data</h2>
+
+<pre><code>$self-&gt;prepare_sap_instances_data();</code></pre>
+
+<p>Prepares data for installation of all SAP components using openqa parameter &quot;SAP_INSTANCES&quot;. parameter example: SAP_INSTANCES = &quot;ASCS,ERS,PAS,AAS&quot;.</p>
+
+<p><b>HDB</b> = Hana database export - netweaver component, not database</p>
+
+<p><b>ASCS</b> = Central services</p>
+
+<p><b>ERS</b> = Enqueue replication</p>
+
+<p><b>PAS</b> = Primary application server</p>
+
+<p><b>AAS</b> = Additional application server</p>
+
+<h2 id="get_nw_instance_name">get_nw_instance_name</h2>
+
+<pre><code>$self-&gt;get_nw_instance_name(instance_type=&gt;$instance_type, instance_id=&gt;$instance_id);</code></pre>
+
+<p>Returns standard sap instance directory name constructed from instance id and instance type.</p>
+
+<p><b>instance_type</b> Instance type (ASCS, ERS, PAS, AAS)</p>
+
+<p><b>instance_id</b> Instance ID - two digit number</p>
+
+<h2 id="is_instance_type_supported">is_instance_type_supported</h2>
+
+<pre><code>$self-&gt;is_instance_type_supported($instance_type);</code></pre>
+
+<p>Checks if instance type is supported. Returns $instance_type with sucess, croaks with missing argument or unsupported value detected.</p>
+
+<p><b>instance_type</b> Instance type (ASCS, ERS, PAS, AAS)</p>
+
+<h2 id="share_hosts_entry">share_hosts_entry</h2>
+
+<pre><code>$self-&gt;share_hosts_entry(virtual_hostname=&gt;$virtual_hostname,
+                         virtual_ip=&gt;$virtual_ip,
+                         shared_directory_root=&gt;shared_directory_root);</code></pre>
+
+<p>Creates file with virtual IP and hostname entry for <code>/etc/hosts</code> file on mounted shared device (Default: <code>/sapmnt</code>). This is to help creating <code>/etc/hosts</code> file which would include entries for all nodes.</p>
+
+<p>File name: &lt;INSTANCE_TYPE&gt;</p>
+
+<p>File content: &lt;virtual IP&gt; &lt;virtual_hostname&gt;</p>
+
+<p><b>virtual_hostname</b> Virtual hostname (alias) which is tied to instance and will be moved with HA IP addr resource</p>
+
+<p><b>virtual_ip</b> Virtual IP addr tied to an instance and HA resource</p>
+
+<p><b>shared_directory_root</b> Shared directory available for all instances. Separate directory &#39;hosts&#39; will be created</p>
+
+<h2 id="add_hosts_file_entries">add_hosts_file_entries</h2>
+
+<pre><code>$self-&gt;add_hosts_file_entries();</code></pre>
+
+<p>Reads files in &#39;HOSTS_SHARED_DIRECTORY&#39; and adds entries into /etc/hosts file.</p>
+
+<h2 id="get_sidadm">get_sidadm</h2>
+
+<pre><code>$self-&gt;get_sidadm([must_exist=&gt;$must_exist]);</code></pre>
+
+<p>Returns sidadm username created from SAP sid - parameter INSTANCE_SID. check_if_exists - if set to true, test will fail if user does not exist. tests inconsistency between OpenQA parameter and real username</p>
+
+<p><b>must_exist</b> Checks if sidadm exists, croaks on failure. Default &#39;false&#39;</p>
+
+<h2 id="sap_show_status_info">sap_show_status_info</h2>
+
+<pre><code>$self-&gt;sap_show_status_info(cluster=&gt;1, netweaver=&gt;1);</code></pre>
+
+<p>Prints output for standard set of commands to show info about system in various stages of the test for troubleshooting. It is possible to activate or deactivate various output sections by named args:</p>
+
+<p><b>cluster</b> - Shows cluster related outputs</p>
+
+<p><b>netweaver</b> - Shows netweaver related outputs</p>
+
+<h2 id="sapcontrol">sapcontrol</h2>
+
+<pre><code>$self-&gt;sapcontrol(instance_id=&gt;$instance_id,
+   webmethod=&gt;$webmethod,
+   [additional_args=&gt;$additional_args,
+   remote_execution=&gt;$remote_execution]);</code></pre>
+
+<p>Executes sapcontrol webmethod for instance specified in arguments and returns exit code received from command. Allows remote execution of webmethods between instances, however not all webmethods are possible to execute in that manner.</p>
+
+<p>Sapcontrol return codes:</p>
+
+<pre><code>RC 0 = webmethod call was successfull
+RC 1 = webmethod call failed
+RC 2 = last webmethod call in progress (processes are starting/stopping)
+RC 3 = all processes GREEN
+RC 4 = all processes GREY (stopped)</code></pre>
+
+<p><b>instance_id</b> 2 digit instance number</p>
+
+<p><b>webmethod</b> webmethod name to be executed (Ex: Stop, GetProcessList, ...)</p>
+
+<p><b>additional_args</b> additional arguments to be appended at the end of command</p>
+
+<p><b>return_output</b> returns output instead of RC</p>
+
+<p><b>remote_hostname</b> hostname of the target instance for remote execution. Local execution does not need this.</p>
+
+<p><b>sidadm_password</b> Password for sidadm user. Only required for remote execution.</p>
+
+<h2 id="sapcontrol_process_check">sapcontrol_process_check</h2>
+
+<pre><code>$self-&gt;sapcontrol_process_check(expected_state=&gt;expected_state,
+   [instance_id=&gt;$instance_id,
+   loop_sleep=&gt;$loop_sleep,
+   timeout=&gt;$timeout,
+   wait_for_state=&gt;$wait_for_state]);</code></pre>
+
+<p>Runs &quot;sapcontrol -nr &lt;INST_NO&gt; -function GetProcessList&quot; via SIDadm and compares RC against expected state. Croaks if state is not correct.</p>
+
+<p>Expected return codes are:</p>
+
+<pre><code>RC 0 = webmethod call was successfull
+RC 1 = webmethod call failed (This includes NIECONN_REFUSED status)
+RC 2 = last webmethod call in progress (processes are starting/stopping)
+RC 3 = all processes GREEN
+RC 4 = all processes GREY (stopped)</code></pre>
+
+<p>Method arguments:</p>
+
+<p><b>expected_state</b> State that is expected (failed, started, stopped)</p>
+
+<p><b>instance_id</b> Instance number - two digit number</p>
+
+<p><b>loop_sleep</b> sleep time between checks - only used if &#39;wait_for_state&#39; is true</p>
+
+<p><b>timeout</b> timeout for waiting for target state, after which function croaks</p>
+
+<p><b>wait_for_state</b> If set to true, function will wait for expected state until success or timeout</p>
+
+<h2 id="get_remote_instance_number">get_remote_instance_number</h2>
+
+<pre><code>$self-&gt;get_instance_number(instance_type=&gt;$instance_type);</code></pre>
+
+<p>Finds instance number from remote instance using sapcontrol &quot;GetSystemInstanceList&quot; webmethod. Local system instance number is required to execute sapcontrol though.</p>
+
+<p><b>instance_type</b> Instance type (ASCS, ERS) - this can be expanded to other instances</p>
+
+<h2 id="get_instance_profile_path">get_instance_profile_path</h2>
+
+<pre><code>$self-&gt;get_instance_profile_path(instance_type=&gt;$instance_type, instance_id=$instance_id);</code></pre>
+
+<p>Returns full instance profile path for specified instance type</p>
+
+<p><b>instance_type</b> Instance type (ASCS, ERS, PAS, AAS)</p>
+
+<p><b>instance_id</b> Instance number - two digit number</p>
+
+<h2 id="load_ase_env">load_ase_env</h2>
+
+<pre><code>$self-&gt;load_ase_env</code></pre>
+
+<p>Loads environment variables from ASE installation into the current shell session.</p>
+
+<h2 id="upload_ase_logs">upload_ase_logs</h2>
+
+<pre><code>$self-&gt;upload_ase_logs</code></pre>
+
+<p>Save and upload to openQA the SAP ASE installation logs. These are typically located in <code>/opt/sap/log</code> and <code>/opt/sap/$SYBASE_ASE/install</code> but depend on the response file used during installation.</p>
 
 
 </body>
