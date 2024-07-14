@@ -30,6 +30,26 @@ if (get_var("VERSION")) {
 our %guests = ();
 if (get_var("REGRESSION", '') =~ /xen/) {
     %guests = (
+        sles12sp3PV => {
+            name => 'sles12sp3PV',
+            autoyast => 'autoyast_xen/sles12sp3PV_PRG.xml',
+            extra_params => '--connect xen:/// --virt-type xen --paravirt --os-variant sles12sp3',
+            macaddress => '52:54:00:78:73:b9',
+            ip => '192.168.122.121',
+            distro => 'SLE_12_SP4',
+            location => 'http://mirror.suse.cz/install/SLP/SLE-12-SP3-Server-GM/x86_64/DVD1/',
+            linuxrc => 'ifcfg="eth0=192.168.122.121/24,192.168.122.1,192.168.122.1"',
+        },
+        sles12sp3HVM => {
+            name => 'sles12sp3HVM',
+            autoyast => 'autoyast_xen/sles12sp3HVM_PRG.xml',
+            extra_params => '--connect xen:/// --virt-type xen --hvm --os-variant sles12sp3',
+            macaddress => '52:54:00:78:73:ba',
+            ip => '192.168.122.122',
+            distro => 'SLE_12_SP4',
+            location => 'http://mirror.suse.cz/install/SLP/SLE-12-SP3-Server-GM/x86_64/DVD1/',
+            linuxrc => 'ifcfg="eth0=192.168.122.122/24,192.168.122.1,192.168.122.1"',
+        },
         sles15sp2HVM => {
             name => 'sles15sp2HVM',
             autoyast => 'autoyast_xen/sles15sp2HVM_PRG.xml',
@@ -148,6 +168,11 @@ if (get_var("REGRESSION", '') =~ /xen/) {
     # Filter out guests not allowed for the detected SLE version
     if (is_sle('=12-SP5')) {
         my @allowed_guests = qw(sles12sp5HVM sles12sp5PV sles15sp5HVM sles15sp5PV sles15sp6HVM sles15sp6PV);
+        foreach my $guest (keys %guests) {
+            delete $guests{$guest} unless grep { $_ eq $guest } @allowed_guests;
+        }
+    } elsif (is_sle('=12-SP3')) {
+        my @allowed_guests = qw(sles12sp3HVM sles12sp3PV);
         foreach my $guest (keys %guests) {
             delete $guests{$guest} unless grep { $_ eq $guest } @allowed_guests;
         }
