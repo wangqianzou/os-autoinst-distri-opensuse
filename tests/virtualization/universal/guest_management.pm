@@ -42,7 +42,7 @@ sub run {
         if (script_run("virsh shutdown $guest") != 0) {
             record_info('Softfail', "Guest $guest seems to be already down", result => 'softfail');
         }
-        if (script_retry("virsh list --all | grep $guest | grep \"shut off\"", delay => 15, retry => 6, die => 0)) {
+        if (script_retry("virsh list --all | grep $guest | grep \"shut off\"", delay => 30, retry => 6, die => 0)) {
             record_info('Softfail', "Shutdown on $guest failed", result => 'softfail');
             assert_script_run "virsh destroy $guest";
         }
