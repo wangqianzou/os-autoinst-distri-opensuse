@@ -25,6 +25,9 @@ sub run_test {
     foreach my $guest (keys %virt_autotest::common::guests) {
         remove_additional_nic($guest, "00:16:3e:32");
         remove_additional_disks($guest);
+        if (script_run("virsh domstate $guest | grep 'shut off'") == 0) {
+            script_run("virsh start $guest");
+        }
     }
 
     #x11_start_program 'virt-manager';

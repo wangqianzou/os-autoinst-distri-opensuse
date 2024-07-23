@@ -19,6 +19,14 @@ use warnings;
 use testapi;
 use utils;
 
+sub remove_guest {
+    my $guest = shift;
+
+    if (script_run("virsh list --all | grep '$guest'", 90) == 0) {
+        assert_script_run "virsh destroy $guest";
+        assert_script_run "virsh undefine $guest";
+    }
+}
 sub run_test {
     assert_script_run "mkdir -p /var/lib/libvirt/images/saves/";
 
@@ -44,6 +52,12 @@ sub run_test {
 
     record_info "SSH", "Check hosts are listening on SSH";
     script_retry "nmap $_ -PN -p ssh | grep open", delay => 3, retry => 60 foreach (keys %virt_autotest::common::guests);
+}
+
+sub post_run_hook {
+    #    my $self = shift;
+    remove_guest $_ foreach (keys %virt_autotest::common::imports);
+    #    $self->SUPER::post_run_hook;
 }
 
 1;
