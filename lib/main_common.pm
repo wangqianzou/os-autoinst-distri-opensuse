@@ -2470,6 +2470,21 @@ sub load_hypervisor_tests {
         loadtest "virtualization/universal/finish";
     }
 
+    my @ordered_tests = (
+        'ENABLE_SAVE_AND_RESTORE',
+        'ENABLE_GUEST_MANAGEMENT',
+        'ENABLE_FINAL',
+        'ENABLE_STORAGE',
+        'ENABLE_WINDOWS',
+        'ENABLE_DOM_METRICS',
+        'ENABLE_IRQBALANCE',
+        'ENABLE_VIR_NET',
+        'ENABLE_VIRTMANAGER',
+        'ENABLE_HOTPLUGGING',
+        'ENABLE_SNAPSHOTS',
+        'ENABLE_SRIOV_NETWORK_CARD_PCI_PASSTHROUGH',
+    );
+
     my %virt_features = (
         ENABLE_SAVE_AND_RESTORE => {
             modules => ['virtualization/universal/save_and_restore'],
@@ -2512,7 +2527,7 @@ sub load_hypervisor_tests {
         },
     );
 
-    for my $test (keys %virt_features) {
+    for my $test (@ordered_tests) {
         next if $test eq 'ENABLE_SNAPSHOTS';
         my $feature = $virt_features{$test};
         my $modules = $feature->{modules};
