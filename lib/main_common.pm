@@ -2353,6 +2353,7 @@ sub check_and_load_mu_virt_features {
 
     # Check the switch variable and host_hypervisor
     if (check_var($test, 1) && (!$hypervisor || check_var('HOST_HYPERVISOR', $hypervisor))) {
+        loadtest "virt_autotest/login_console";
         loadtest "console/login";
         loadtest "virt_autotest/cleanup_libvirtd_log";
         foreach my $module (@$modules) {
