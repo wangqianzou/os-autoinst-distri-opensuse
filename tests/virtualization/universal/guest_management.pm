@@ -42,8 +42,15 @@ sub run {
         if (script_run("virsh shutdown $guest") != 0) {
             record_info('Softfail', "Guest $guest seems to be already down", result => 'softfail');
         }
-        if (script_retry("virsh list --all | grep $guest | grep \"shut off\"", delay => 15, retry => 6, die => 0)) {
+
+        record_info('domstate', script_output("virsh domstate $guest", proceed_on_failure => 1));
+        record_info('domstate', script_output("virsh domstate $guest", proceed_on_failure => 1));
+        record_info('domstate', script_output("virsh domstate $guest", proceed_on_failure => 1));
+        record_info('domstate', script_output("virsh domstate $guest", proceed_on_failure => 1));
+        record_info('domstate', script_output("virsh domstate $guest", proceed_on_failure => 1));
+        if (script_retry("virsh domstate $guest | grep shut", delay => 15, retry => 6, die => 0)) {
             record_info('Softfail', "Shutdown on $guest failed", result => 'softfail');
+            record_info('domstate', script_output("virsh domstate $guest", proceed_on_failure => 1));
             assert_script_run "virsh destroy $guest";
         }
     }
