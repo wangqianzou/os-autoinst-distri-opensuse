@@ -27,6 +27,10 @@ sub run {
     if (check_var('VIDEOMODE', 'text')) {
         # Select section booting on Installation Settings overview on text mode
         send_key $cmd{change};
+        for (1 .. 10) {
+            sleep 1;
+            save_screenshot;
+        }
         assert_screen 'inst-overview-options';
         is_upgrade() ? send_key 'alt-t' : send_key 'alt-b';
     }
