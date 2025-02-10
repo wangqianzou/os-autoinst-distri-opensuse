@@ -264,6 +264,15 @@ sub prepare_guest_for_sriov_passthrough {
     #passwordless access to guest
     save_guest_ip($vm, name => "br123");    #get the guest ip via key words in 'virsh domiflist'
 
+    # Workaround for bug: 1230913
+    my @exception_vms = ("sles15sp2", "sles15sp2HVM", "sles15sp2PV", "sles15sp3HVM", "sles15sp3PV");
+    if (is_sle('=15-sp2') && grep { $_ eq $vm } @exception_vms) {
+        script_run("ssh root\@$vm 'grep -q \"^DHCLIENT_CLIENT_ID=\" /etc/sysconfig/network/ifcfg-eth0 || { uuid=\$(uuidgen); echo \"DHCLIENT_CLIENT_ID=\\\"\$uuid\\\"\" >> /etc/sysconfig/network/ifcfg-eth0; }'", 90);
+        assert_script_run "virsh reboot $vm";
+        wait_guest_online($vm);
+        record_soft_failure('bsc#1230913 - After rebooting a VM following a hotplug, eth0 takes the IP of eth1');
+    }
+
     # Enable udev debug logs
     my $udev_conf_file = "/etc/udev/udev.conf";
     if (script_run("ssh root\@$vm \"ls $udev_conf_file\"") == 0) {
